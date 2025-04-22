@@ -19,6 +19,7 @@ folder = "Rozpoznawanie_Liter/Nasze/dane/"
 while True:
     success, img = cap.read()
     imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    imgRGB = np.array(imgRGB, dtype=np.uint8)
     results = hands.process(imgRGB)
     if results.multi_hand_landmarks:
         for handLms in results.multi_hand_landmarks:
