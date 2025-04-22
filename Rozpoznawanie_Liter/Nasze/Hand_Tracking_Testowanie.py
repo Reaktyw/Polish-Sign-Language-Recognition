@@ -16,12 +16,12 @@ i = 0
 vector = []
 vector2 = []
 
-folder = os.path.dirname(__file__)
+directory = os.path.dirname(__file__)
 
 while True:
     success, img = cap.read()
     imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    imgRGB = np.array(imgRGB, dtype=np.uint8)
+    imgRGB = np.array(imgRGB, dtype=np.uint8)   # Zmiana typu danych, żeby mediapipe działało
     results = hands.process(imgRGB)
     if results.multi_hand_landmarks:
         for handLms in results.multi_hand_landmarks:
@@ -29,36 +29,35 @@ while True:
                 print("i = ", i)
                 i += 1
                 vector = []
-                for id, lm in enumerate(handLms.landmark):
+                for id, lm in enumerate(handLms.landmark):  # Zapisywanie współrzędnych do wektora
                     height,width,channels = img.shape
-                    #cx, cy = int(lm.x*width), int(lm.y*height) TEGO UŻYWAĆ JEŻELI CHCEMY TYLKO X I Y (ALE NIE CHCEMY)
                     print(f"Punkt {id}: ({lm.x}, {lm.y}, {lm.z})")
-                    vector.append([lm.x,lm.y,lm.z])
+                    vector.append([lm.x,lm.y,lm.z]) 
                 vector2.append(vector)
-            mpDraw.draw_landmarks(img, handLms, mpHands.HAND_CONNECTIONS)
+            mpDraw.draw_landmarks(img, handLms, mpHands.HAND_CONNECTIONS)   # Wyświetlanie punktów i połączeń między nimi
 
-    currTime = time.time()
-    fps = 1/(currTime-prevTime)
+    currTime = time.time()  
+    fps = 1/(currTime-prevTime) # Obliczanie FPS
     prevTime = currTime
 
     cv2.putText(img, str(int(fps)), (10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
     cv2.imshow("Image", img)
-    if i >= 60:
+    if i >= 60:     # Zapisywanie 60 klatek do folderu
         i = 0
         capture_coordinates = False
 
-        np.save(folder+"/dane/"+letter, vector2)
+        np.save(directory+"/dane/"+letter, vector2)
         print(vector2)
 
         vector2 = []
 
 
     key = cv2.waitKey(1) & 0xFF
-    if key == ord('r'):
+    if key == ord('r'):     # Nadawanie nazwy literze
         letter = input("Jaką literę chcesz zapisać? ")
         time.sleep(1)
         capture_coordinates = True
-    elif key == ord('q'):
+    elif key == ord('q'):   # Wychodzenie z programu
         break
 
 cap.release()
