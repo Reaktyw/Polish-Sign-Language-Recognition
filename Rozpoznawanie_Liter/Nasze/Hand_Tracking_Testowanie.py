@@ -2,6 +2,7 @@ import cv2
 import mediapipe as mp
 import time
 import numpy as np
+import os
 
 cap = cv2.VideoCapture(0)
 
@@ -14,7 +15,8 @@ capture_coordinates = False
 i = 0
 vector = []
 vector2 = []
-folder = "Rozpoznawanie_Liter/Nasze/dane/"
+
+folder = os.path.dirname(__file__)
 
 while True:
     success, img = cap.read()
@@ -45,7 +47,7 @@ while True:
         i = 0
         capture_coordinates = False
 
-        np.save(folder+letter, vector2)
+        np.save(folder+"/dane/"+letter, vector2)
         print(vector2)
 
         vector2 = []
