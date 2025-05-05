@@ -3,6 +3,16 @@ import mediapipe as mp
 import time
 import numpy as np
 import os
+import string
+
+
+from numpy.ma.core import shape
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.python.keras.utils.np_utils import to_categorical
+from keras.models import Sequential
+from keras.layers import TimeDistributed, Flatten, Input, LSTM, Dense, Dropout
+from sklearn.utils import shuffle
+from keras.callbacks import EarlyStopping
 
 cap = cv2.VideoCapture(0)
 
@@ -18,7 +28,7 @@ vector2 = []
 
 directory = os.path.dirname(__file__)
 
-while True:
+while 0:
     success, img = cap.read()
     imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     imgRGB = np.array(imgRGB, dtype=np.uint8)   # Zmiana typu danych, żeby mediapipe działało
@@ -62,3 +72,80 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
+
+
+
+rozpoznawanie_liter = os.path.dirname(directory)
+pslr = os.path.dirname(rozpoznawanie_liter)
+
+#### KONWERSJA NA 60 KLATEK #################
+
+# data_path = os.path.join(pslr, 'data')
+# for letter in os.listdir(data_path):
+#     curr_path = os.path.join(data_path, letter)
+#     for num in os.listdir(curr_path):
+#         curr_patha = os.path.join(curr_path, num)
+#         data = np.load(curr_patha, allow_pickle=True)
+#
+#         frames_over_0_30_60 = shape(data)[0]%30
+#         frames = shape(data)[0]
+#
+#         if 30 <= frames < 60:
+#             data_duplicated = data[:-(60 - frames)]
+#             for i in range(60 - frames, 0, -1):
+#                 last_frame = data[-i]
+#                 duplicates = np.repeat(last_frame[np.newaxis, :, :], 2, axis=0)
+#                 data_duplicated = np.concatenate((data_duplicated, duplicates), axis=0)
+#             data = data_duplicated
+#
+#         elif frames > 60:
+#             data = data[:-frames_over_0_30_60]
+#
+#         # print(curr_patha, shape(data))
+#         print(letter + '/' + num)
+#
+#         save_folder_path = os.path.join(pslr, 'data60')
+#         save_letter_folder_path = os.path.join(save_folder_path, letter)
+#         save_file_path = os.path.join(save_letter_folder_path, num)
+#
+#         os.makedirs(save_letter_folder_path, exist_ok=True)
+#         np.save(save_file_path, data)
+
+#####################################################################
+
+X = []
+y = []
+
+data_path = os.path.join(pslr, 'data60')
+for letter in os.listdir(data_path):
+    curr_path = os.path.join(data_path, letter)
+    for num in os.listdir(curr_path):
+        curr_patha = os.path.join(curr_path, num)
+        data = np.load(curr_patha, allow_pickle=True)
+
+        X.append(data)
+        y.append(letter)
+
+X = np.array(X)
+y = np.array(y)
+print(X.shape)
+
+ls = LabelEncoder()
+y_encoded = ls.fit_transform(y)
+y_onehot = to_categorical(y_encoded, num_classes=36)
+X, y_onehot = shuffle(X, y_onehot, random_state=42)
+
+model = Sequential()
+model.add(Input((60, 21, 3)))
+model.add(TimeDistributed(Flatten()))
+model.add(LSTM(256, return_sequences=True))
+model.add(LSTM(128))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(64, activation='relu'))
+model.add(Dropout(0.3))
+model.add(Dense(36, activation='softmax'))
+
+model.compile(optimizer='adamw', loss='categorical_crossentropy', metrics=['accuracy'])
+
+es = EarlyStopping(patience=7, restore_best_weights=True)
+model.fit(X, y_onehot, epochs=50, batch_size=64, validation_split=0.2, callbacks=[es])
