@@ -537,7 +537,7 @@ model.compile(optimizer='adamw', loss='categorical_crossentropy', metrics=['accu
 
 es = EarlyStopping(patience=7, restore_best_weights=True)
 #history = model.fit(X, y_onehot, epochs=5, batch_size=64, validation_split=0.2, callbacks=[es])
-history = model.fit(X_train, y_train, epochs=50, batch_size=64, validation_split=0.2, callbacks=[es])
+history = model.fit(X_train, y_train, epochs=50, batch_size=64, validation_split=0.25, callbacks=[es])
 
 # Accuracy
 plt.figure("Accuracy")
@@ -566,7 +566,7 @@ y_pred_labels = np.argmax(y_pred, axis=1)
 y_true_labels = np.argmax(y_test, axis=1)
 
 # Wyświetlenie przykładowych predykcji
-for i in range(20):
+for i in range(len(y_pred)):
     print(f"Expected: {ls.inverse_transform([y_true_labels[i]])[0]}, Predicted: {ls.inverse_transform([y_pred_labels[i]])[0]}")
 
 
