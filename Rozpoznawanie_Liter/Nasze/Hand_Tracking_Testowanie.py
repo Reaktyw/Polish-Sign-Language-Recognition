@@ -568,3 +568,8 @@ y_true_labels = np.argmax(y_test, axis=1)
 # Wyświetlenie przykładowych predykcji
 for i in range(20):
     print(f"Expected: {ls.inverse_transform([y_true_labels[i]])[0]}, Predicted: {ls.inverse_transform([y_pred_labels[i]])[0]}")
+
+
+from sklearn.metrics import accuracy_score
+accuracy = accuracy_score(y_true_labels, y_pred_labels)
+print(f"\nDokładność predykcji: {accuracy * 100:.2f}%")
