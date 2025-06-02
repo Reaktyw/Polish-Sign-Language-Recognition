@@ -15,7 +15,7 @@ pslr = os.path.dirname(rozpoznawanie_liter)
 
 X = []
 y = []
-data_path = os.path.join(pslr, 'data60_pred')
+data_path = os.path.join(directory, 'dane')
 for letter in os.listdir(data_path):
     curr_path = os.path.join(data_path, letter)
     for num in os.listdir(curr_path):

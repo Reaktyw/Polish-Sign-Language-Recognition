@@ -28,7 +28,7 @@ vector2 = []
 directory = os.path.dirname(__file__)
 
 
-while 0:                                        # Zmienić na 1, jeżeli chce się włączyć kamerę
+while 1:                                        # Zmienić na 1, jeżeli chce się włączyć kamerę
     success, img = cap.read()
     imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     imgRGB = np.array(imgRGB, dtype=np.uint8)   # Zmiana typu danych, żeby mediapipe działało
@@ -79,57 +79,67 @@ rozpoznawanie_liter = os.path.dirname(directory)
 pslr = os.path.dirname(rozpoznawanie_liter)
 
 #### KONWERSJA NA 60 KLATEK #################
+while 0:
+    data_path = os.path.join(pslr, 'data')
+    for letter in os.listdir(data_path):
+        curr_path = os.path.join(data_path, letter)
+        for num in os.listdir(curr_path):
+            curr_patha = os.path.join(curr_path, num)
+            data = np.load(curr_patha, allow_pickle=True)
 
-# data_path = os.path.join(pslr, 'data')
+            frames_over_0_30_60 = shape(data)[0]%30
+            frames = shape(data)[0]
+
+            if 30 <= frames < 60:
+                data_duplicated = data[:-(60 - frames)]
+                for i in range(60 - frames, 0, -1):
+                    last_frame = data[-i]
+                    duplicates = np.repeat(last_frame[np.newaxis, :, :], 2, axis=0)
+                    data_duplicated = np.concatenate((data_duplicated, duplicates), axis=0)
+                data = data_duplicated
+
+            elif frames > 60:
+                data = data[:-frames_over_0_30_60]
+
+            # print(curr_patha, shape(data))
+            print(letter + '/' + num)
+
+            save_folder_path = os.path.join(pslr, 'data60')
+            save_letter_folder_path = os.path.join(save_folder_path, letter)
+            save_file_path = os.path.join(save_letter_folder_path, num)
+
+            os.makedirs(save_letter_folder_path, exist_ok=True)
+            np.save(save_file_path, data)
+    break
+
+#####################################################################
+import matplotlib.pyplot as plt
+
+# Wczytanie jednej przykładowej próbki z zestawu
+character = 'b'
+X = []
+plot_names = []
+data_path = os.path.join(pslr, 'data60', character)
 # for letter in os.listdir(data_path):
 #     curr_path = os.path.join(data_path, letter)
 #     for num in os.listdir(curr_path):
 #         curr_patha = os.path.join(curr_path, num)
 #         data = np.load(curr_patha, allow_pickle=True)
-#
-#         frames_over_0_30_60 = shape(data)[0]%30
-#         frames = shape(data)[0]
-#
-#         if 30 <= frames < 60:
-#             data_duplicated = data[:-(60 - frames)]
-#             for i in range(60 - frames, 0, -1):
-#                 last_frame = data[-i]
-#                 duplicates = np.repeat(last_frame[np.newaxis, :, :], 2, axis=0)
-#                 data_duplicated = np.concatenate((data_duplicated, duplicates), axis=0)
-#             data = data_duplicated
-#
-#         elif frames > 60:
-#             data = data[:-frames_over_0_30_60]
-#
-#         # print(curr_patha, shape(data))
-#         print(letter + '/' + num)
-#
-#         save_folder_path = os.path.join(pslr, 'data60')
-#         save_letter_folder_path = os.path.join(save_folder_path, letter)
-#         save_file_path = os.path.join(save_letter_folder_path, num)
-#
-#         os.makedirs(save_letter_folder_path, exist_ok=True)
-#         np.save(save_file_path, data)
 
-#####################################################################
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+#         X.append(data)
+#         y.append(letter)
+for num in os.listdir(data_path):
+    curr_path = os.path.join(data_path, num)
+    data = np.load(curr_path, allow_pickle=True)
 
-# Wczytanie jednej przykładowej próbki z zestawu
-X = []
-y = []
-data_path = os.path.join(pslr, 'data60')
-for letter in os.listdir(data_path):
-    curr_path = os.path.join(data_path, letter)
-    for num in os.listdir(curr_path):
-        curr_patha = os.path.join(curr_path, num)
-        data = np.load(curr_patha, allow_pickle=True)
+    X.append(data)
+    plot_names.append(num)
 
-        X.append(data)
-        y.append(letter)
+
+
 
 samples = []  # shape: (60, 21, 3)
-for indeks in np.arange(1150, 1160): #d
+for indeks in np.arange(-10, 0):
     samples.append(X[indeks])
 
 # Połączenia punktów dłoni
@@ -143,29 +153,34 @@ connections = [
 
 
 # Dla każdej klatki: narysuj punkty i połączenia
-# for sample in samples:
-#     fig = plt.figure(figsize=(10, 8))
-#     ax = fig.add_subplot(111, projection='3d')
-#     ax.set_title("Wszystkie 60 klatek jednej próbki")
-#     ax.set_xlabel('X')
-#     ax.set_ylabel('Y')
-#     ax.set_zlabel('Z')
+# Jeżeli włączyć, to zamienić na 1
+i = 1
+while 1:
+    for sample in samples:
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        ax.set_title(f"Wszystkie 60 klatek jednej próbki '{plot_names[-i]}'")
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
 
-#     for frame in sample:
-#         x, y, z = frame[:, 0], frame[:, 1], frame[:, 2]
-#         ax.scatter(x, y, z, c='blue', s=5)
-#         for start, end in connections:
-#             xs, ys, zs = frame[[start, end]].T
-#             ax.plot(xs, ys, zs, c='gray', linewidth=0.5)
+        for frame in sample:
+            x, y, z = frame[:, 0], frame[:, 1], frame[:, 2]
+            ax.scatter(x, y, z, c='blue', s=5)
+            for start, end in connections:
+                xs, ys, zs = frame[[start, end]].T
+                ax.plot(xs, ys, zs, c='gray', linewidth=0.5)
+        i = i + 1
 
-# plt.tight_layout()
-# plt.show()
-
-
-
-
+    plt.tight_layout()
+    plt.show()
+    break
 
 
+
+
+
+# Pobieranie danych do nauki
 X = []
 y = []
 
@@ -188,7 +203,7 @@ y_encoded = ls.fit_transform(y)
 y_onehot = to_categorical(y_encoded, num_classes=36)
 X, y_onehot = shuffle(X, y_onehot, random_state=42)
 
-
+# Trenowanie modelu
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(X, y_onehot, test_size=0.2, random_state=42)
 
