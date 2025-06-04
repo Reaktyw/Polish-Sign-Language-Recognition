@@ -1,8 +1,10 @@
 import cv2
 import mediapipe as mp
 import time
+
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 
 
 from numpy.ma.core import shape
@@ -12,6 +14,9 @@ from keras.models import Sequential
 from keras.layers import TimeDistributed, Flatten, Input, LSTM, Dense, Dropout
 from sklearn.utils import shuffle
 from keras.callbacks import EarlyStopping
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+import pickle
 
 cap = cv2.VideoCapture(0)
 
@@ -46,7 +51,7 @@ while 1:                                        # Zmienić na 1, jeżeli chce si
                 vector2.append(vector)
             mpDraw.draw_landmarks(img, handLms, mpHands.HAND_CONNECTIONS)   # Wyświetlanie punktów i połączeń między nimi
 
-    currTime = time.time()  
+    currTime = time.time()
     fps = 1/(currTime-prevTime) # Obliczanie FPS
     prevTime = currTime
 
@@ -77,10 +82,10 @@ cv2.destroyAllWindows()
 
 rozpoznawanie_liter = os.path.dirname(directory)
 pslr = os.path.dirname(rozpoznawanie_liter)
+data_path = os.path.join(pslr, 'data')
 
 #### KONWERSJA NA 60 KLATEK #################
 while 0:
-    data_path = os.path.join(pslr, 'data')
     for letter in os.listdir(data_path):
         curr_path = os.path.join(data_path, letter)
         for num in os.listdir(curr_path):
@@ -112,79 +117,78 @@ while 0:
             np.save(save_file_path, data)
     break
 
-#####################################################################
-import matplotlib.pyplot as plt
+################################################# DO USUNIĘCIA CHYBA CAŁE ZAKOMENTOWANE ############################3
 
-# Wczytanie jednej przykładowej próbki z zestawu
-character = 'b'
-X = []
-plot_names = []
-data_path = os.path.join(pslr, 'data60', character)
-# for letter in os.listdir(data_path):
-#     curr_path = os.path.join(data_path, letter)
-#     for num in os.listdir(curr_path):
-#         curr_patha = os.path.join(curr_path, num)
-#         data = np.load(curr_patha, allow_pickle=True)
+# # Wczytanie jednej przykładowej próbki z zestawu
+# character = 'b'
+# X = []
+# plot_names = []
+# data_path = os.path.join(pslr, 'data60', character)
+# # for letter in os.listdir(data_path):
+# #     curr_path = os.path.join(data_path, letter)
+# #     for num in os.listdir(curr_path):
+# #         curr_patha = os.path.join(curr_path, num)
+# #         data = np.load(curr_patha, allow_pickle=True)
 
-#         X.append(data)
-#         y.append(letter)
-for num in os.listdir(data_path):
-    curr_path = os.path.join(data_path, num)
-    data = np.load(curr_path, allow_pickle=True)
+# #         X.append(data)
+# #         y.append(letter)
+# for num in os.listdir(data_path):
+#     curr_path = os.path.join(data_path, num)
+#     data = np.load(curr_path, allow_pickle=True)
 
-    X.append(data)
-    plot_names.append(num)
-
+#     X.append(data)
+#     plot_names.append(num)
 
 
 
-samples = []  # shape: (60, 21, 3)
-for indeks in np.arange(-10, 0):
-    samples.append(X[indeks])
 
-# Połączenia punktów dłoni
-connections = [
-    (0, 1), (1, 2), (2, 3), (3, 4),      # Thumb
-    (0, 5), (5, 6), (6, 7), (7, 8),      # Index
-    (0, 9), (9, 10), (10, 11), (11, 12), # Middle
-    (0, 13), (13, 14), (14, 15), (15, 16), # Ring
-    (0, 17), (17, 18), (18, 19), (19, 20)  # Pinky
-]
+# samples = []  # shape: (60, 21, 3)
+# for indeks in np.arange(-10, 0):
+#     samples.append(X[indeks])
+
+# # Połączenia punktów dłoni
+# connections = [
+#     (0, 1), (1, 2), (2, 3), (3, 4),      # Thumb
+#     (0, 5), (5, 6), (6, 7), (7, 8),      # Index
+#     (0, 9), (9, 10), (10, 11), (11, 12), # Middle
+#     (0, 13), (13, 14), (14, 15), (15, 16), # Ring
+#     (0, 17), (17, 18), (18, 19), (19, 20)  # Pinky
+# ]
 
 
-# Dla każdej klatki: narysuj punkty i połączenia
-# Jeżeli włączyć, to zamienić na 1
-i = 1
-while 1:
-    for sample in samples:
-        fig = plt.figure(figsize=(10, 8))
-        ax = fig.add_subplot(111, projection='3d')
-        ax.set_title(f"Wszystkie 60 klatek jednej próbki '{plot_names[-i]}'")
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
+# # Dla każdej klatki: narysuj punkty i połączenia
+# # Jeżeli włączyć, to zamienić na 1
+# i = 1
+# while 1:
+#     for sample in samples:
+#         fig = plt.figure(figsize=(10, 8))
+#         ax = fig.add_subplot(111, projection='3d')
+#         ax.set_title(f"Wszystkie 60 klatek jednej próbki '{plot_names[-i]}'")
+#         ax.set_xlabel('X')
+#         ax.set_ylabel('Y')
+#         ax.set_zlabel('Z')
 
-        for frame in sample:
-            x, y, z = frame[:, 0], frame[:, 1], frame[:, 2]
-            ax.scatter(x, y, z, c='blue', s=5)
-            for start, end in connections:
-                xs, ys, zs = frame[[start, end]].T
-                ax.plot(xs, ys, zs, c='gray', linewidth=0.5)
-        i = i + 1
+#         for frame in sample:
+#             x, y, z = frame[:, 0], frame[:, 1], frame[:, 2]
+#             ax.scatter(x, y, z, c='blue', s=5)
+#             for start, end in connections:
+#                 xs, ys, zs = frame[[start, end]].T
+#                 ax.plot(xs, ys, zs, c='gray', linewidth=0.5)
+#         i = i + 1
 
-    plt.tight_layout()
-    plt.show()
-    break
+#     plt.tight_layout()
+#     plt.show()
+#     break
 
 
 
 
 
 # Pobieranie danych do nauki
+data_path = os.path.join(pslr, 'data60')
 X = []
 y = []
 
-data_path = os.path.join(pslr, 'data60')
 for letter in os.listdir(data_path):
     curr_path = os.path.join(data_path, letter)
     for num in os.listdir(curr_path):
@@ -204,7 +208,6 @@ y_onehot = to_categorical(y_encoded, num_classes=36)
 X, y_onehot = shuffle(X, y_onehot, random_state=42)
 
 # Trenowanie modelu
-from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(X, y_onehot, test_size=0.2, random_state=42)
 
 
@@ -221,9 +224,11 @@ model.add(Dense(36, activation='softmax'))
 model.compile(optimizer='adamw', loss='categorical_crossentropy', metrics=['accuracy'])
 
 es = EarlyStopping(patience=7, restore_best_weights=True)
-history = model.fit(X_train, y_train, epochs=50, batch_size=64, validation_split=0.25, callbacks=[es])
+history = model.fit(X_train, y_train, epochs=5, batch_size=64, validation_split=0.25, callbacks=[es])
 
-#model.save(f'{directory}/model_24_05_2025_1.keras')            # Zapisywanie modelu
+#model.save(f'{directory}/model_04_06_2025_1.keras')            # Zapisywanie modelu
+with open('label_encoder_1.pkl', 'wb') as f:                      # Zapisywanie enkodera
+    pickle.dump(ls, f)
 
 # Accuracy
 plt.figure("Accuracy")
@@ -266,6 +271,5 @@ for i in range(len(y_pred)):
 
 
 
-from sklearn.metrics import accuracy_score
 accuracy = accuracy_score(y_true_labels, y_pred_labels)
 print(f"\nDokładność predykcji: {accuracy * 100:.2f}%")

@@ -1,6 +1,3 @@
-
-
-#----------------------- W tym pliku model jest tylko załadowany, nie ma jeszcze czasu rzeczywistego ----------------
 from keras.models import load_model
 import numpy as np
 import os
