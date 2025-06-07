@@ -26,10 +26,10 @@ mpDraw = mp.solutions.drawing_utils
 prevTime = 0
 currTime = 0
 i = 0
+last_predicted = ''
 
 X = []
 vector = []
-vector2 = []
 
 while 1:
     success, img = cap.read()
@@ -64,15 +64,11 @@ while 1:
                 predicted_index = y_pred_labels[0]
                 predicted = ls.inverse_transform([predicted_index])[0]
                 confidence = y_pred[0][predicted_index] * 100
-
                 print(f"Predicted: {predicted}, Confidence: {confidence:.2f}%")
 
-
-
-
-
-
-
+                if confidence >= 90:
+                    last_predicted = predicted
+            
 
 
             mpDraw.draw_landmarks(img, handLms, mpHands.HAND_CONNECTIONS)   # Wyświetlanie punktów i połączeń między nimi
@@ -81,6 +77,7 @@ while 1:
     fps = 1/(currTime-prevTime) # Obliczanie FPS
     prevTime = currTime
 
+    cv2.putText(img, f"{last_predicted}", (80,80), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
     cv2.putText(img, str(int(fps)), (10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
     cv2.imshow("Image", img)
 
