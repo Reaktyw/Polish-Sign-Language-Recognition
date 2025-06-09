@@ -5,7 +5,7 @@ from sklearn.preprocessing import LabelEncoder
 from tensorflow.python.keras.utils.np_utils import to_categorical
 
 directory = os.path.dirname(__file__)
-model = load_model(f'{directory}/model_24_05_2025_1.keras')
+model = load_model(f'{directory}/model_fine_tuning_04_06_2025_1.keras')
 
 rozpoznawanie_liter = os.path.dirname(directory)
 pslr = os.path.dirname(rozpoznawanie_liter)

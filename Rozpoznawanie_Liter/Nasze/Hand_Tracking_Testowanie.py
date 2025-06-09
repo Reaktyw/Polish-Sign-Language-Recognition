@@ -1,275 +1,30 @@
+from random import random, randrange
 import cv2
 import mediapipe as mp
 import time
 
 import numpy as np
 import os
-import matplotlib.pyplot as plt
-
-
-from numpy.ma.core import shape
 from sklearn.preprocessing import LabelEncoder
-from tensorflow.python.keras.utils.np_utils import to_categorical
-from keras.models import Sequential
-from keras.layers import TimeDistributed, Flatten, Input, LSTM, Dense, Dropout
-from sklearn.utils import shuffle
-from keras.callbacks import EarlyStopping
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
-import pickle
 
-cap = cv2.VideoCapture(0)
-
-mpHands = mp.solutions.hands
-hands = mpHands.Hands()
-mpDraw = mp.solutions.drawing_utils
-prevTime = 0
-currTime = 0
-capture_coordinates = False
-i = 0
-vector = []
-vector2 = []
+from Rozpoznawanie_Liter.Nasze.HandsDetection import HandsDetection
+from Rozpoznawanie_Liter.Nasze.LetterPreparation import LetterPreparation
+from Rozpoznawanie_Liter.Nasze.PSLR_Model import PSLR_Model
 
 directory = os.path.dirname(__file__)
-
-
-while 1:                                        # Zmienić na 1, jeżeli chce się włączyć kamerę
-    success, img = cap.read()
-    imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    imgRGB = np.array(imgRGB, dtype=np.uint8)   # Zmiana typu danych, żeby mediapipe działało
-    results = hands.process(imgRGB)
-    if results.multi_hand_landmarks:
-        for handLms in results.multi_hand_landmarks:
-            if capture_coordinates:
-                print("i = ", i)
-                i += 1
-                vector = []
-                for id, lm in enumerate(handLms.landmark):  # Zapisywanie współrzędnych do wektora
-                    height,width,channels = img.shape
-                    print(f"Punkt {id}: ({lm.x}, {lm.y}, {lm.z})")
-                    vector.append([lm.x,lm.y,lm.z]) 
-                vector2.append(vector)
-            mpDraw.draw_landmarks(img, handLms, mpHands.HAND_CONNECTIONS)   # Wyświetlanie punktów i połączeń między nimi
-
-    currTime = time.time()
-    fps = 1/(currTime-prevTime) # Obliczanie FPS
-    prevTime = currTime
-
-    cv2.putText(img, str(int(fps)), (10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
-    cv2.imshow("Image", img)
-    if i >= 60:     # Zapisywanie 60 klatek do folderu
-        i = 0
-        capture_coordinates = False
-
-        np.save(directory+"/dane/"+letter, vector2)
-        print(vector2)
-
-        vector2 = []
-
-
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord('r'):     # Nadawanie nazwy literze
-        letter = input("Jaką literę chcesz zapisać? ")
-        time.sleep(1)
-        capture_coordinates = True
-    elif key == ord('q'):   # Wychodzenie z programu
-        break
-
-cap.release()
-cv2.destroyAllWindows()
-
-
-
-rozpoznawanie_liter = os.path.dirname(directory)
-pslr = os.path.dirname(rozpoznawanie_liter)
-data_path = os.path.join(pslr, 'data')
-
-#### KONWERSJA NA 60 KLATEK #################
-while 0:
-    for letter in os.listdir(data_path):
-        curr_path = os.path.join(data_path, letter)
-        for num in os.listdir(curr_path):
-            curr_patha = os.path.join(curr_path, num)
-            data = np.load(curr_patha, allow_pickle=True)
-
-            frames_over_0_30_60 = shape(data)[0]%30
-            frames = shape(data)[0]
-
-            if 30 <= frames < 60:
-                data_duplicated = data[:-(60 - frames)]
-                for i in range(60 - frames, 0, -1):
-                    last_frame = data[-i]
-                    duplicates = np.repeat(last_frame[np.newaxis, :, :], 2, axis=0)
-                    data_duplicated = np.concatenate((data_duplicated, duplicates), axis=0)
-                data = data_duplicated
-
-            elif frames > 60:
-                data = data[:-frames_over_0_30_60]
-
-            # print(curr_patha, shape(data))
-            print(letter + '/' + num)
-
-            save_folder_path = os.path.join(pslr, 'data60')
-            save_letter_folder_path = os.path.join(save_folder_path, letter)
-            save_file_path = os.path.join(save_letter_folder_path, num)
-
-            os.makedirs(save_letter_folder_path, exist_ok=True)
-            np.save(save_file_path, data)
-    break
-
-################################################# DO USUNIĘCIA CHYBA CAŁE ZAKOMENTOWANE ############################3
-
-# # Wczytanie jednej przykładowej próbki z zestawu
-# character = 'b'
-# X = []
-# plot_names = []
-# data_path = os.path.join(pslr, 'data60', character)
-# # for letter in os.listdir(data_path):
-# #     curr_path = os.path.join(data_path, letter)
-# #     for num in os.listdir(curr_path):
-# #         curr_patha = os.path.join(curr_path, num)
-# #         data = np.load(curr_patha, allow_pickle=True)
-
-# #         X.append(data)
-# #         y.append(letter)
-# for num in os.listdir(data_path):
-#     curr_path = os.path.join(data_path, num)
-#     data = np.load(curr_path, allow_pickle=True)
-
-#     X.append(data)
-#     plot_names.append(num)
-
-
-
-
-# samples = []  # shape: (60, 21, 3)
-# for indeks in np.arange(-10, 0):
-#     samples.append(X[indeks])
-
-# # Połączenia punktów dłoni
-# connections = [
-#     (0, 1), (1, 2), (2, 3), (3, 4),      # Thumb
-#     (0, 5), (5, 6), (6, 7), (7, 8),      # Index
-#     (0, 9), (9, 10), (10, 11), (11, 12), # Middle
-#     (0, 13), (13, 14), (14, 15), (15, 16), # Ring
-#     (0, 17), (17, 18), (18, 19), (19, 20)  # Pinky
-# ]
-
-
-# # Dla każdej klatki: narysuj punkty i połączenia
-# # Jeżeli włączyć, to zamienić na 1
-# i = 1
-# while 1:
-#     for sample in samples:
-#         fig = plt.figure(figsize=(10, 8))
-#         ax = fig.add_subplot(111, projection='3d')
-#         ax.set_title(f"Wszystkie 60 klatek jednej próbki '{plot_names[-i]}'")
-#         ax.set_xlabel('X')
-#         ax.set_ylabel('Y')
-#         ax.set_zlabel('Z')
-
-#         for frame in sample:
-#             x, y, z = frame[:, 0], frame[:, 1], frame[:, 2]
-#             ax.scatter(x, y, z, c='blue', s=5)
-#             for start, end in connections:
-#                 xs, ys, zs = frame[[start, end]].T
-#                 ax.plot(xs, ys, zs, c='gray', linewidth=0.5)
-#         i = i + 1
-
-#     plt.tight_layout()
-#     plt.show()
-#     break
-
-
-
-
-
-# Pobieranie danych do nauki
-data_path = os.path.join(pslr, 'data60')
-X = []
-y = []
-
-for letter in os.listdir(data_path):
-    curr_path = os.path.join(data_path, letter)
-    for num in os.listdir(curr_path):
-        curr_patha = os.path.join(curr_path, num)
-        data = np.load(curr_patha, allow_pickle=True)
-
-        X.append(data)
-        y.append(letter)
-
-X = np.array(X)
-y = np.array(y)
-print(X.shape)
-
 ls = LabelEncoder()
-y_encoded = ls.fit_transform(y)
-y_onehot = to_categorical(y_encoded, num_classes=36)
-X, y_onehot = shuffle(X, y_onehot, random_state=42)
-
-# Trenowanie modelu
-X_train, X_test, y_train, y_test = train_test_split(X, y_onehot, test_size=0.2, random_state=42)
-
-
-model = Sequential()
-model.add(Input((60, 21, 3)))
-model.add(TimeDistributed(Flatten()))
-model.add(LSTM(256, return_sequences=True))
-model.add(LSTM(128))
-model.add(Dense(128, activation='relu'))
-model.add(Dense(64, activation='relu'))
-model.add(Dropout(0.3))
-model.add(Dense(36, activation='softmax'))
-
-model.compile(optimizer='adamw', loss='categorical_crossentropy', metrics=['accuracy'])
-
-es = EarlyStopping(patience=7, restore_best_weights=True)
-history = model.fit(X_train, y_train, epochs=5, batch_size=64, validation_split=0.25, callbacks=[es])
-
-#model.save(f'{directory}/model_04_06_2025_1.keras')            # Zapisywanie modelu
-with open('label_encoder_1.pkl', 'wb') as f:                      # Zapisywanie enkodera
-    pickle.dump(ls, f)
-
-# Accuracy
-plt.figure("Accuracy")
-plt.plot(history.history['accuracy'], label='Train accuracy')
-plt.plot(history.history['val_accuracy'], label='Val accuracy')
-plt.title('Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend()
-
-# Loss
-plt.figure("Loss")
-plt.plot(history.history['loss'], label='Train loss')
-plt.plot(history.history['val_loss'], label='Val loss')
-plt.title('Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.legend()
-
-plt.tight_layout()
-plt.show()
-
-# Predykcja na zbiorze testowym
-y_pred = model.predict(X_test)
-y_pred_labels = np.argmax(y_pred, axis=1)
-y_true_labels = np.argmax(y_test, axis=1)
-
-# Wyświetlenie przykładowych predykcji
-for i in range(len(y_pred)):
-    expected = ls.inverse_transform([y_true_labels[i]])[0]
-    predicted = ls.inverse_transform([y_pred_labels[i]])[0]
-    confidence = y_pred[i][y_pred_labels[i]] * 100  # Pewność dla przewidywanej litery
-
-    true_index = y_true_labels[i]
-    true_letter_confidence = y_pred[i][true_index] * 100  # Pewność dla prawdziwej litery
-
-    if expected != predicted: print(f"Expected: {ls.inverse_transform([y_true_labels[i]])[0]}, Predicted: {ls.inverse_transform([y_pred_labels[i]])[0]}, Confidence: {confidence:.2f}%, Confidence of real letter: {true_letter_confidence:.2f}%")
-    else: print(f"Expected: {ls.inverse_transform([y_true_labels[i]])[0]}, Predicted: {ls.inverse_transform([y_pred_labels[i]])[0]}, Confidence: {confidence:.2f}%")
-    
 
 
 
-accuracy = accuracy_score(y_true_labels, y_pred_labels)
-print(f"\nDokładność predykcji: {accuracy * 100:.2f}%")
+# letter_preparation = LetterPreparation(directory)
+# letter_preparation.convert_data_to_60_frames()
+
+# letter_preparation.prepare_data_for_training(ls)
+PSLR_model = PSLR_Model(ls)
+# PSLR_model.train_model(letter_preparation.X, letter_preparation.Y,f'{directory}/model_test_04_06_2025_1.keras')
+
+
+
+modell = PSLR_model.load_model(f'{directory}/model_fine_tuning_04_06_2025_1.keras')
+hd = HandsDetection()
+hd.capture(recognition=True, model= modell, dir= directory)

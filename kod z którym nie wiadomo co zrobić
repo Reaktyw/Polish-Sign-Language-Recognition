@@ -1,0 +1,126 @@
+################################################# DO USUNIĘCIA CHYBA CAŁE ZAKOMENTOWANE ############################3
+
+# # Wczytanie jednej przykładowej próbki z zestawu
+# character = 'b'
+# X = []
+# plot_names = []
+# data_path = os.path.join(pslr, 'data60', character)
+# # for letter in os.listdir(data_path):
+# #     curr_path = os.path.join(data_path, letter)
+# #     for num in os.listdir(curr_path):
+# #         curr_patha = os.path.join(curr_path, num)
+# #         data = np.load(curr_patha, allow_pickle=True)
+
+# #         X.append(data)
+# #         y.append(letter)
+# for num in os.listdir(data_path):
+#     curr_path = os.path.join(data_path, num)
+#     data = np.load(curr_path, allow_pickle=True)
+
+#     X.append(data)
+#     plot_names.append(num)
+
+
+
+
+# samples = []  # shape: (60, 21, 3)
+# for indeks in np.arange(-10, 0):
+#     samples.append(X[indeks])
+
+# # Połączenia punktów dłoni
+# connections = [
+#     (0, 1), (1, 2), (2, 3), (3, 4),      # Thumb
+#     (0, 5), (5, 6), (6, 7), (7, 8),      # Index
+#     (0, 9), (9, 10), (10, 11), (11, 12), # Middle
+#     (0, 13), (13, 14), (14, 15), (15, 16), # Ring
+#     (0, 17), (17, 18), (18, 19), (19, 20)  # Pinky
+# ]
+
+
+# # Dla każdej klatki: narysuj punkty i połączenia
+# # Jeżeli włączyć, to zamienić na 1
+# i = 1
+# while 1:
+#     for sample in samples:
+#         fig = plt.figure(figsize=(10, 8))
+#         ax = fig.add_subplot(111, projection='3d')
+#         ax.set_title(f"Wszystkie 60 klatek jednej próbki '{plot_names[-i]}'")
+#         ax.set_xlabel('X')
+#         ax.set_ylabel('Y')
+#         ax.set_zlabel('Z')
+
+#         for frame in sample:
+#             x, y, z = frame[:, 0], frame[:, 1], frame[:, 2]
+#             ax.scatter(x, y, z, c='blue', s=5)
+#             for start, end in connections:
+#                 xs, ys, zs = frame[[start, end]].T
+#                 ax.plot(xs, ys, zs, c='gray', linewidth=0.5)
+#         i = i + 1
+
+#     plt.tight_layout()
+#     plt.show()
+#     break
+
+to było przed zapisaniem litery#################################################################################
+if i >= 60:     # Zapisywanie 60 klatek do folderu
+                i = 0
+                capture_coordinates = False
+
+                np.save(directory+"/dane/"+letter, vector2)
+                print(vector2)
+
+                vector2 = []
+
+#########################################################################################
+
+# Accuracy
+# plt.figure("Accuracy")
+# plt.plot(history.history['accuracy'], label='Train accuracy')
+# plt.plot(history.history['val_accuracy'], label='Val accuracy')
+# plt.title('Accuracy')
+# plt.xlabel('Epoch')
+# plt.ylabel('Accuracy')
+# plt.legend()
+#
+# # Loss
+# plt.figure("Loss")
+# plt.plot(history.history['loss'], label='Train loss')
+# plt.plot(history.history['val_loss'], label='Val loss')
+# plt.title('Loss')
+# plt.xlabel('Epoch')
+# plt.ylabel('Loss')
+# plt.legend()
+
+# plt.tight_layout()
+# plt.show()
+
+#######################################################################################################
+
+    currTime = time.time()
+    real_fps = 1/(currTime-prevTime)
+    prevTime = currTime
+
+    cv2.putText(img, str(int(real_fps)), (10,70), cv2.FONT_HERSHEY_PLAIN, 3, (255,0,255), 3)
+    cv2.imshow("Image", img)
+    if i >= 60:     # Zapisywanie 60 klatek do folderu
+        i = 0
+        self.capture_coordinates = False
+
+        np.save(self.directory+"/dane/"+letter, vector2)
+        print(vector2)
+
+        vector2 = []
+
+
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('r'):     # Nadawanie nazwy literze
+        letter = input("Jaką literę chcesz zapisać? ")
+        time.sleep(1)
+        self.capture_coordinates = True
+    elif key == ord('q'):   # Wychodzenie z programu
+        break
+    elapsed_time = time.perf_counter() - start_time
+    wait_time = max(0, frame_duration - elapsed_time)
+    time.sleep(wait_time)
+self.cap.release()
+cv2.destroyAllWindows()
