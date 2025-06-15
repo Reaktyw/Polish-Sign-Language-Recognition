@@ -1,5 +1,5 @@
 import os
-from random import random, randrange
+from random import randrange
 import numpy as np
 from tensorflow.python.keras.utils.np_utils import to_categorical
 from numpy import shape

@@ -39,7 +39,6 @@ class HandsDetection:
                     if self.capture_coordinates:
                         vector = []
                         for id, lm in enumerate(handLms.landmark):  # Zapisywanie współrzędnych do wektora
-                            height,width,channels = img.shape
                             vector.append([lm.x,lm.y,lm.z])
                         X.append(vector)
 
