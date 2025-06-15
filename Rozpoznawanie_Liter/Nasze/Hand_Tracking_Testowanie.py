@@ -11,6 +11,10 @@ from Rozpoznawanie_Liter.Nasze.HandsDetection import HandsDetection
 from Rozpoznawanie_Liter.Nasze.LetterPreparation import LetterPreparation
 from Rozpoznawanie_Liter.Nasze.PSLR_Model import PSLR_Model
 
+#from HandsDetection import HandsDetection
+#from LetterPreparation import LetterPreparation
+#from PSLR_Model import PSLR_Model
+
 directory = os.path.dirname(__file__)
 ls = LabelEncoder()
 

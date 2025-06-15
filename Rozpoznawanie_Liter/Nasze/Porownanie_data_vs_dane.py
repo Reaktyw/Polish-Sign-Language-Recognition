@@ -83,7 +83,6 @@ for indeks in np.arange(-amount, 0):
 
 
 # Dla każdej klatki: narysuj punkty i połączenia
-# Jeżeli włączyć, to zamienić na 1
 i = 1
 for sample in samples:
     fig = plt.figure(figsize=(10, 8))
